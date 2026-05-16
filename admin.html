@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blog admin | Sattori Brand Awakening</title>
+    <meta
+      name="description"
+      content="Write, draft, and publish Sattori blog posts from a simple local admin portal."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="admin-main">
+      <section class="page-hero admin-hero">
+        <div>
+          <p class="eyebrow">Blog portal</p>
+          <h1>Admin login.</h1>
+          <p>
+            Sign in to write drafts, publish posts, and update the public blog page.
+          </p>
+        </div>
+      </section>
+
+      <section class="section admin-login-section" data-admin-login-panel>
+        <form class="admin-login" data-admin-login-form>
+          <span class="section-kicker">Secure access</span>
+          <h2>Enter admin password.</h2>
+          <label>
+            <span>Password</span>
+            <input name="password" type="password" placeholder="Admin password" autocomplete="current-password" required />
+          </label>
+          <button class="button primary" type="submit">Login</button>
+          <p data-login-message aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="section admin-shell" data-admin-content hidden>
+        <form class="admin-editor" data-blog-admin-form>
+          <input type="hidden" name="id" />
+          <div class="field-grid">
+            <label>
+              <span>Title</span>
+              <input name="title" type="text" placeholder="Blog title" required />
+            </label>
+            <label>
+              <span>Category</span>
+              <select name="category" required>
+                <option value="marketing">Marketing mastery</option>
+                <option value="brand">Personal brand building</option>
+                <option value="journal">Nidhi's journal entries</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Excerpt</span>
+            <textarea name="excerpt" rows="4" placeholder="Short summary for the blog card" required></textarea>
+          </label>
+          <label>
+            <span>Full blog</span>
+            <textarea name="body" rows="9" placeholder="Write the full blog here. Use blank lines for paragraphs." required></textarea>
+          </label>
+          <div class="admin-actions">
+            <button class="button secondary" type="submit" name="status" value="draft">Save draft</button>
+            <button class="button primary" type="submit" name="status" value="published">Publish</button>
+            <button class="text-link" type="button" data-blog-reset>Clear form</button>
+          </div>
+          <p data-admin-message aria-live="polite"></p>
+        </form>
+
+        <aside class="admin-panel">
+          <div class="section-heading compact">
+            <span class="section-kicker">Published and drafts</span>
+            <h2>Manage posts.</h2>
+            <p>Published posts appear on the public blog page. Drafts stay here until you publish them.</p>
+            <button class="text-link" type="button" data-admin-logout>Logout</button>
+          </div>
+          <div class="admin-post-list" data-admin-posts></div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="admin-footer">
+      <a class="brand-mark footer-brand" href="index.html" aria-label="Sattori home">
+        <img src="assets/sattori-green-logo.png" alt="Sattori" />
+      </a>
+      <span>Admin portal</span>
+      <a href="blogs.html">View blogs</a>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

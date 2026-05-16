@@ -7,59 +7,37 @@ if (menuToggle && nav) {
   });
 }
 
-const audienceCopy = {
-  students:
-    "LinkedIn presence, interview narrative, resume clarity, and a confident first professional story.",
-  professionals:
-    "Career acceleration through sharper positioning, stronger visibility, and communication that earns trust before meetings begin.",
-  founders:
-    "Founder story, market trust, content authority, investor-client credibility, and premium positioning.",
-  experts:
-    "Credibility-to-visibility systems for doctors, architects, consultants, coaches, and independent experts.",
-  women:
-    "Voice ownership, authority building, confident visibility, and community-backed momentum for women-led businesses.",
-  corporates:
-    "Real-world brand, career, and communication skills for teams, campuses, leadership cohorts, and institutions.",
-};
+const heroSlides = document.querySelectorAll("[data-hero-slide]");
+const heroDots = document.querySelectorAll("[data-hero-dot]");
+let heroSlideIndex = 0;
 
-const audienceButtons = document.querySelectorAll("[data-audience]");
-const audienceDetail = document.querySelector("[data-audience-detail] h3");
-
-audienceButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    audienceButtons.forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
-    if (audienceDetail) {
-      audienceDetail.textContent = audienceCopy[button.dataset.audience];
-    }
+function setHeroSlide(index) {
+  if (!heroSlides.length) return;
+  heroSlideIndex = index % heroSlides.length;
+  heroSlides.forEach((slide, slideIndex) => {
+    slide.classList.toggle("active", slideIndex === heroSlideIndex);
   });
-});
+  heroDots.forEach((dot, dotIndex) => {
+    dot.classList.toggle("active", dotIndex === heroSlideIndex);
+  });
+}
 
-const formats = {
-  keynote: {
-    title: "60-90 mins",
-    body: "High-energy, high-impact introduction to personal branding.",
-  },
-  intensive: {
-    title: "6 hours",
-    body: "Practical, actionable, and immediately applicable.",
-  },
-  immersive: {
-    title: "Deep Dive",
-    body: "Transformation-led, with coaching, portfolio work, and brand creation.",
-  },
-};
+if (heroSlides.length) {
+  window.setInterval(() => {
+    setHeroSlide(heroSlideIndex + 1);
+  }, 3600);
+}
 
-const formatTabs = document.querySelectorAll("[data-format]");
-const formatCopy = document.querySelector("[data-format-copy]");
+document.querySelectorAll("[data-card-link]").forEach((card) => {
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("a")) return;
+    window.location.href = card.dataset.cardLink;
+  });
 
-formatTabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    formatTabs.forEach((item) => item.classList.remove("active"));
-    tab.classList.add("active");
-    const selected = formats[tab.dataset.format];
-    if (formatCopy && selected) {
-      formatCopy.innerHTML = `<strong>${selected.title}</strong><span>${selected.body}</span>`;
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      window.location.href = card.dataset.cardLink;
     }
   });
 });
@@ -92,9 +70,7 @@ filters.forEach((filter) => {
     filters.forEach((item) => item.classList.remove("active"));
     filter.classList.add("active");
     const category = filter.dataset.filter;
-    articles.forEach((article) => {
-      article.classList.toggle("hidden", category !== "all" && article.dataset.category !== category);
-    });
+    applyBlogFilter(category);
   });
 });
 
@@ -125,17 +101,6 @@ if (recommendations.length) {
   setInterval(() => showRecommendation(activeRecommendation + 1), 6000);
 }
 
-document.querySelectorAll("[data-newsletter]").forEach((form) => {
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const message = form.parentElement.querySelector("[data-newsletter-message]");
-    form.reset();
-    if (message) {
-      message.textContent = "Thank you for signing up. Clarity is on its way.";
-    }
-  });
-});
-
 const contactForm = document.querySelector("[data-contact-form]");
 
 if (contactForm) {
@@ -153,3 +118,281 @@ if (contactForm) {
     window.location.href = `mailto:reach@nidhimittal.com?subject=${subject}&body=${body}`;
   });
 }
+
+const blogStoreKey = "sattori.blogPosts";
+const adminSessionKey = "sattori.adminUnlocked";
+const adminPassword = "Sattori@123";
+const categoryLabels = {
+  marketing: "Marketing mastery",
+  brand: "Personal brand building",
+  journal: "Nidhi's journal entries",
+};
+
+function readBlogPosts() {
+  try {
+    return JSON.parse(localStorage.getItem(blogStoreKey) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function writeBlogPosts(posts) {
+  localStorage.setItem(blogStoreKey, JSON.stringify(posts));
+  window.dispatchEvent(new CustomEvent("sattori:blogs-updated"));
+}
+
+function makePostId(title) {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48);
+  return `${slug || "post"}-${Date.now()}`;
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#039;",
+    };
+    return entities[char];
+  });
+}
+
+function paragraphsFromText(value) {
+  return value
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+    .join("");
+}
+
+function createPublicPostCard(post) {
+  const article = document.createElement("article");
+  article.className = "article-card live-post";
+  article.id = post.id;
+  article.dataset.category = post.category;
+  article.innerHTML = `
+    <span>${categoryLabels[post.category] || "Sattori insight"}</span>
+    <h2>${escapeHtml(post.title)}</h2>
+    <p>${escapeHtml(post.excerpt)}</p>
+    <button class="text-link" type="button" data-expand>Read full blog</button>
+    <div class="article-more">${paragraphsFromText(post.body)}</div>
+  `;
+  return article;
+}
+
+function currentBlogFilter() {
+  return document.querySelector(".filter.active")?.dataset.filter || "all";
+}
+
+function applyBlogFilter(category = currentBlogFilter()) {
+  document.querySelectorAll("[data-category]").forEach((article) => {
+    article.classList.toggle("hidden", category !== "all" && article.dataset.category !== category);
+  });
+}
+
+function renderPublicPosts() {
+  const mount = document.querySelector("[data-live-posts]");
+  if (!mount) return;
+
+  const publishedPosts = readBlogPosts()
+    .filter((post) => post.status === "published")
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  mount.replaceChildren(...publishedPosts.map(createPublicPostCard));
+  mount.querySelectorAll("[data-expand]").forEach((button) => {
+    button.dataset.closedLabel = button.textContent;
+    button.addEventListener("click", () => {
+      const card = button.closest(".article-card");
+      const expanded = card.classList.toggle("expanded");
+      button.textContent = expanded ? "Close note" : button.dataset.closedLabel;
+    });
+  });
+  applyBlogFilter();
+}
+
+function renderAdminPosts() {
+  const list = document.querySelector("[data-admin-posts]");
+  if (!list) return;
+
+  const posts = readBlogPosts().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  if (!posts.length) {
+    list.innerHTML = `<p class="admin-empty">No posts yet. Write your first one and publish when it is ready.</p>`;
+    return;
+  }
+
+  list.innerHTML = posts
+    .map(
+      (post) => `
+        <article class="admin-post" data-admin-post-id="${post.id}">
+          <div>
+            <span>${post.status === "published" ? "Published" : "Draft"} / ${categoryLabels[post.category]}</span>
+            <h3>${escapeHtml(post.title)}</h3>
+            <p>${escapeHtml(post.excerpt)}</p>
+          </div>
+          <div class="admin-post-actions">
+            <button class="text-link" type="button" data-edit-post="${post.id}">Edit</button>
+            <button class="text-link" type="button" data-toggle-post="${post.id}">
+              ${post.status === "published" ? "Unpublish" : "Publish"}
+            </button>
+            <button class="text-link danger-link" type="button" data-delete-post="${post.id}">Delete</button>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+const blogAdminForm = document.querySelector("[data-blog-admin-form]");
+const adminLoginForm = document.querySelector("[data-admin-login-form]");
+const adminLoginPanel = document.querySelector("[data-admin-login-panel]");
+const adminContent = document.querySelector("[data-admin-content]");
+
+function isAdminUnlocked() {
+  return sessionStorage.getItem(adminSessionKey) === "true";
+}
+
+function setAdminUnlocked(unlocked) {
+  if (!adminLoginPanel || !adminContent) return;
+  adminLoginPanel.hidden = unlocked;
+  adminContent.hidden = !unlocked;
+  if (unlocked) {
+    renderAdminPosts();
+  }
+}
+
+if (adminLoginForm) {
+  const loginMessage = document.querySelector("[data-login-message]");
+  setAdminUnlocked(isAdminUnlocked());
+
+  adminLoginForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const password = new FormData(adminLoginForm).get("password");
+    if (password === adminPassword) {
+      sessionStorage.setItem(adminSessionKey, "true");
+      adminLoginForm.reset();
+      if (loginMessage) {
+        loginMessage.textContent = "";
+      }
+      setAdminUnlocked(true);
+    } else if (loginMessage) {
+      loginMessage.textContent = "Incorrect password. Please try again.";
+    }
+  });
+
+  document.querySelector("[data-admin-logout]")?.addEventListener("click", () => {
+    sessionStorage.removeItem(adminSessionKey);
+    resetBlogForm();
+    setAdminUnlocked(false);
+  });
+}
+
+function resetBlogForm() {
+  if (!blogAdminForm) return;
+  blogAdminForm.reset();
+  blogAdminForm.elements.id.value = "";
+}
+
+if (blogAdminForm) {
+  const message = document.querySelector("[data-admin-message]");
+
+  blogAdminForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!isAdminUnlocked()) return;
+    const submitter = event.submitter;
+    const data = new FormData(blogAdminForm);
+    const id = data.get("id") || makePostId(data.get("title"));
+    const posts = readBlogPosts();
+    const existingIndex = posts.findIndex((post) => post.id === id);
+    const existing = posts[existingIndex] || {};
+    const post = {
+      ...existing,
+      id,
+      title: data.get("title").trim(),
+      category: data.get("category"),
+      excerpt: data.get("excerpt").trim(),
+      body: data.get("body").trim(),
+      status: submitter?.value || "draft",
+      createdAt: existing.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (existingIndex >= 0) {
+      posts[existingIndex] = post;
+    } else {
+      posts.push(post);
+    }
+
+    writeBlogPosts(posts);
+    renderAdminPosts();
+    resetBlogForm();
+    if (message) {
+      message.textContent = post.status === "published" ? "Published. The blog page has updated." : "Draft saved.";
+    }
+  });
+
+  document.querySelector("[data-blog-reset]")?.addEventListener("click", resetBlogForm);
+
+  document.addEventListener("click", (event) => {
+    if (!isAdminUnlocked()) return;
+    const editButton = event.target.closest("[data-edit-post]");
+    const toggleButton = event.target.closest("[data-toggle-post]");
+    const deleteButton = event.target.closest("[data-delete-post]");
+    const posts = readBlogPosts();
+
+    if (editButton) {
+      const post = posts.find((item) => item.id === editButton.dataset.editPost);
+      if (!post) return;
+      blogAdminForm.elements.id.value = post.id;
+      blogAdminForm.elements.title.value = post.title;
+      blogAdminForm.elements.category.value = post.category;
+      blogAdminForm.elements.excerpt.value = post.excerpt;
+      blogAdminForm.elements.body.value = post.body;
+      blogAdminForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    if (toggleButton) {
+      const nextPosts = posts.map((post) =>
+        post.id === toggleButton.dataset.togglePost
+          ? {
+              ...post,
+              status: post.status === "published" ? "draft" : "published",
+              updatedAt: new Date().toISOString(),
+            }
+          : post,
+      );
+      writeBlogPosts(nextPosts);
+      renderAdminPosts();
+    }
+
+    if (deleteButton) {
+      const nextPosts = posts.filter((post) => post.id !== deleteButton.dataset.deletePost);
+      writeBlogPosts(nextPosts);
+      renderAdminPosts();
+    }
+  });
+
+  if (isAdminUnlocked()) {
+    renderAdminPosts();
+  }
+}
+
+renderPublicPosts();
+
+window.addEventListener("storage", (event) => {
+  if (event.key === blogStoreKey) {
+    renderPublicPosts();
+    renderAdminPosts();
+  }
+});
+
+window.addEventListener("sattori:blogs-updated", () => {
+  renderPublicPosts();
+  renderAdminPosts();
+});
