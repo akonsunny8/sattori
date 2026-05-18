@@ -42,24 +42,28 @@ document.querySelectorAll("[data-card-link]").forEach((card) => {
   });
 });
 
-const revealItems = document.querySelectorAll(".reveal");
+const revealItems = document.querySelectorAll(
+  ".reveal, main > section, .narrative-card, .program-feature-grid article, .program-detail-list p, .impact-story-track article",
+);
+
+revealItems.forEach((item) => item.classList.add("smooth-reveal"));
 
 if ("IntersectionObserver" in window) {
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
+          entry.target.classList.add("is-visible", "smooth-visible");
           observer.unobserve(entry.target);
         }
       });
     },
-    { threshold: 0.2 },
+    { rootMargin: "0px 0px -8% 0px", threshold: 0.16 },
   );
 
   revealItems.forEach((item) => observer.observe(item));
 } else {
-  revealItems.forEach((item) => item.classList.add("is-visible"));
+  revealItems.forEach((item) => item.classList.add("is-visible", "smooth-visible"));
 }
 
 const filters = document.querySelectorAll("[data-filter]");
