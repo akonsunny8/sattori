@@ -28,6 +28,23 @@ if (heroSlides.length) {
   }, 3600);
 }
 
+const coverSlides = document.querySelectorAll("[data-cover-slide]");
+let coverSlideIndex = 0;
+
+function setCoverSlide(index) {
+  if (!coverSlides.length) return;
+  coverSlideIndex = index % coverSlides.length;
+  coverSlides.forEach((slide, slideIndex) => {
+    slide.classList.toggle("active", slideIndex === coverSlideIndex);
+  });
+}
+
+if (coverSlides.length) {
+  window.setInterval(() => {
+    setCoverSlide(coverSlideIndex + 1);
+  }, 4800);
+}
+
 document.querySelectorAll("[data-card-link]").forEach((card) => {
   card.addEventListener("click", (event) => {
     if (event.target.closest("a")) return;
@@ -105,9 +122,36 @@ if (recommendations.length) {
   setInterval(() => showRecommendation(activeRecommendation + 1), 6000);
 }
 
-const contactForm = document.querySelector("[data-contact-form]");
+const contactForms = document.querySelectorAll("[data-contact-form]");
 
-if (contactForm) {
+function showContactThanks() {
+  let popup = document.querySelector("[data-contact-thanks]");
+  if (!popup) {
+    popup = document.createElement("div");
+    popup.className = "contact-thanks";
+    popup.dataset.contactThanks = "";
+    popup.setAttribute("role", "status");
+    popup.setAttribute("aria-live", "polite");
+    popup.innerHTML = `
+      <div class="contact-thanks-card">
+        <button type="button" aria-label="Close message" data-contact-thanks-close>&times;</button>
+        <p>Thanks for writing and I will get back to you.</p>
+      </div>
+    `;
+    document.body.appendChild(popup);
+    popup.querySelector("[data-contact-thanks-close]")?.addEventListener("click", () => {
+      popup.classList.remove("show");
+    });
+  }
+
+  popup.classList.add("show");
+  window.clearTimeout(showContactThanks.timer);
+  showContactThanks.timer = window.setTimeout(() => {
+    popup.classList.remove("show");
+  }, 5200);
+}
+
+contactForms.forEach((contactForm) => {
   contactForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(contactForm);
@@ -117,11 +161,14 @@ if (contactForm) {
     );
     const message = contactForm.querySelector("[data-contact-message]");
     if (message) {
-      message.textContent = "Thank you. Your email app is opening with the enquiry ready.";
+      message.textContent = "Thanks for writing and I will get back to you.";
     }
-    window.location.href = `mailto:reach@nidhimittal.com?subject=${subject}&body=${body}`;
+    showContactThanks();
+    window.setTimeout(() => {
+      window.location.href = `mailto:reach@nidhimittal.com?subject=${subject}&body=${body}`;
+    }, 900);
   });
-}
+});
 
 const blogStoreKey = "sattori.blogPosts";
 const adminSessionKey = "sattori.adminUnlocked";
@@ -181,11 +228,20 @@ function createPublicPostCard(post) {
   article.className = "article-card live-post";
   article.id = post.id;
   article.dataset.category = post.category;
+  const formattedDate = post.updatedAt
+    ? new Intl.DateTimeFormat("en", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(post.updatedAt))
+    : "New note";
   article.innerHTML = `
-    <span>${categoryLabels[post.category] || "Sattori insight"}</span>
+    <figure class="article-card-image">
+      <img src="assets/brand-awakening-blocks.jpg" alt="" />
+    </figure>
+    <div class="article-meta">
+      <span>${categoryLabels[post.category] || "Brand insight"}</span>
+      <time>${formattedDate}</time>
+    </div>
     <h2>${escapeHtml(post.title)}</h2>
     <p>${escapeHtml(post.excerpt)}</p>
-    <button class="text-link" type="button" data-expand>Read full blog</button>
+    <button class="text-link" type="button" data-expand>Read More</button>
     <div class="article-more">${paragraphsFromText(post.body)}</div>
   `;
   return article;
